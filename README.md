@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/app-icon.png" width="120" alt="MaterialPods icon" />
+<img src="docs/icon-720.png" width="180" alt="MaterialPods icon" />
 
 # MaterialPods
 
