@@ -34,19 +34,32 @@ object ShellHelper {
         when (args.getOrNull(0)) {
             "hfp" -> setHfp(ctx, args[1] == "on")
             "route" -> route(ctx, args.drop(1).map(String::toInt))
-            else -> { log("usage: hfp on|off | route <uid>..."); exitProcess(1) }
+            // Same code Shizuku runs, for testing over adb.
+            "battery" -> Thread { PrivilegedService.with(ctx).setBattery(airPods(ctx), 54, 49, 80, false, false, true); log("battery metadata set"); exitProcess(0) }.start()
+            "connect" -> Thread { log("connect: " + PrivilegedService.with(ctx).connectAudio(airPods(ctx))); exitProcess(0) }.start()
+            "reconnect" -> Thread { log("reconnect: " + PrivilegedService.with(ctx).reconnectA2dp(airPods(ctx))); exitProcess(0) }.start()
+            else -> { log("usage: hfp on|off | route <uid>... | battery | connect | reconnect"); exitProcess(1) }
         }
         Looper.loop()
     }
 
     // --- a Context that claims to be com.android.shell (pattern from scrcpy's FakeContext) ---
 
-    private fun shellContext(): Context {
+    /** Also used by [PrivilegedService] inside Shizuku's process. */
+    fun shellContext(): Context {
         val at = Class.forName("android.app.ActivityThread")
         // Wires up service lookups for mainline modules (Bluetooth is one) — normally done by app startup.
-        at.getDeclaredMethod("initializeMainlineModules").invoke(null)
-        val thread = at.getDeclaredConstructor().apply { isAccessible = true }.newInstance()
-        at.getDeclaredField("sCurrentActivityThread").apply { isAccessible = true }.set(null, thread)
+        runCatching { at.getDeclaredMethod("initializeMainlineModules").invoke(null) } // throws if already done
+        // That call stops at the first module someone (e.g. Shizuku) already set up; make sure Bluetooth is wired.
+        runCatching {
+            val manager = Class.forName("android.os.BluetoothServiceManager").getDeclaredConstructor().apply { isAccessible = true }.newInstance()
+            Class.forName("android.bluetooth.BluetoothFrameworkInitializer")
+                .getDeclaredMethod("setBluetoothServiceManager", manager.javaClass).invoke(null, manager)
+        }
+        val thread = at.getDeclaredMethod("currentActivityThread").invoke(null)
+            ?: at.getDeclaredConstructor().apply { isAccessible = true }.newInstance().also {
+                at.getDeclaredField("sCurrentActivityThread").apply { isAccessible = true }.set(null, it)
+            }
         at.getDeclaredField("mSystemThread").apply { isAccessible = true }.setBoolean(thread, true)
         // Samsung's CompatSandbox reads the configuration while creating the system context.
         runCatching {
@@ -74,6 +87,13 @@ object ShellHelper {
     // Managers built on the system context would carry package "android"; build them on ours.
     private fun <T> newManager(cls: Class<T>, ctx: Context): T =
         cls.getDeclaredConstructor(Context::class.java).apply { isAccessible = true }.newInstance(ctx)
+
+    @SuppressLint("MissingPermission")
+    private fun airPods(ctx: Context): String {
+        val aacp = android.os.ParcelUuid.fromString("74ec2172-0bad-4d01-8f77-997b2be0722a")
+        return (ctx.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bondedDevices
+            .first { it.uuids?.contains(aacp) == true }.address
+    }
 
     // --- HFP connection policy ---
 

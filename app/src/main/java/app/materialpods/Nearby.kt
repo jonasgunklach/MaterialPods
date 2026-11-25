@@ -104,7 +104,11 @@ class BleReceiver : BroadcastReceiver() {
     }
 }
 
-/** The OS drops PendingIntent scans on reboot and app update; re-arm. */
+/** Reboot / app update: re-arm the BLE scan, and restart the service if the AirPods are already connected. */
 class BootReceiver : BroadcastReceiver() {
-    override fun onReceive(ctx: Context, intent: Intent) = Nearby.start(ctx)
+    override fun onReceive(ctx: Context, intent: Intent) {
+        Nearby.start(ctx)
+        val bt = runCatching { Pods.bonded(ctx) }.getOrNull() ?: return
+        if (Pods.aclConnected(bt)) ctx.startForegroundService(Intent(ctx, PodsService::class.java))
+    }
 }

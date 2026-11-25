@@ -65,6 +65,17 @@ When your AirPods show up nearby (lid opened, taken out) and the phone isn't con
 - **High-quality AirPods mic**: records over Apple's own mic stream (AAC-ELD, **64 kHz**) while music keeps playing in full A2DP quality — no drop to call mode.
 - **Connect popup** (card / island) and optional **auto-connect** when a bud goes in your ear.
 - **Quick Settings tile** to cycle listening modes, optional status notification, themed icon.
+- **Optional Shizuku integration** for battery in Android's Bluetooth settings and real one-tap connect (see below).
+
+## System integration (Shizuku, optional)
+
+With [Shizuku](https://shizuku.rikka.app/) MaterialPods gets shell rights — no root — and plugs into Android itself:
+
+- **Battery in the system**: left, right and case show in Bluetooth settings and the media output switcher, like first-party earbuds.
+- **Connect really connects**: the popup, auto-connect and the Connect button bring over music (A2DP) and calls (HFP) directly.
+- **Stereo after recording**: A2DP reconnects when the AirPods mic stream ends, so music doesn't get stuck on one side.
+
+Setup: install Shizuku from the Play Store, start it (Wireless debugging, or `adb shell` with the command the Shizuku app shows), then tap **Allow** in MaterialPods → Settings → System integration. Shizuku has to be started again after each reboot; without it, MaterialPods works as before.
 
 ## Requirements
 
@@ -89,7 +100,7 @@ Needs the Android SDK (compileSdk 37) and NDK 28 for the tiny `hiddenapi` librar
 ### Known limits
 
 - The high-quality mic works **inside MaterialPods**. Other apps (calls, voice assistants) still use Bluetooth's call mode — Android has no way for a normal app to be the system microphone.
-- `ShellHelper` is an experiment (run via adb/Shizuku) that blocks the call profile and reroutes an app's audio to A2DP. It works for apps that let Android pick the device; the Claude app, for example, picks its own and isn't affected.
+- `ShellHelper` (adb) also has an experiment that blocks the call profile and reroutes an app's audio to A2DP. It works for apps that let Android pick the device; the Claude app, for example, picks its own and isn't affected.
 - Hearing aid, loud sound reduction and head gestures aren't built yet (the first two need root).
 
 ## Screenshots

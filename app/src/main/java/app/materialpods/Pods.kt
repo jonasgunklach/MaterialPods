@@ -83,7 +83,7 @@ object Pods {
                 device.value = d
                 // Whatever updates state (AACP or BLE adverts): cache case, keep keys, refresh widgets.
                 scope.launch {
-                    d.state.onEach { rememberCase(it); saveKeys(ctx.applicationContext, it) }
+                    d.state.onEach { rememberCase(it); saveKeys(ctx.applicationContext, it); Privileged.pushBattery(d.bluetoothDevice.address, it) }
                         .map { st -> st.battery.map { it.level to it.status } to mode(st) }
                         .distinctUntilChanged()
                         .collect { updateWidgets(ctx.applicationContext) }
@@ -95,6 +95,7 @@ object Pods {
     /** Page the AirPods by opening the control link; on success the service takes over. */
     fun connectNow(ctx: Context) = scope.launch {
         val d = ensureDevice(ctx) ?: return@launch
+        Privileged.connectAudio(d.bluetoothDevice.address) // real connect when Shizuku is set up
         d.aacp.disconnect()
         if (d.connect() && d.connectionState.value == ConnectionState.CONNECTED)
             ctx.startForegroundService(Intent(ctx, PodsService::class.java))
@@ -151,6 +152,7 @@ object Pods {
     fun init(ctx: Context) {
         if (app != null) return
         app = ctx.applicationContext
+        Privileged.init(ctx)
         val p = prefs(ctx)
         val level = p.getInt("case_level", -1)
         if (level >= 0) lastCase.value = Battery(BatteryComponent.CASE, level, BatteryStatus.NOT_CHARGING, BatterySource.AACP, p.getLong("case_at", 0))
@@ -222,7 +224,7 @@ object Pods {
     fun stopRecording(ctx: Context) = scope.launch {
         val r = recorder ?: return@launch
         recorder = null
-        device.value?.aacp?.endMicrophoneStream()
+        device.value?.let { it.aacp.endMicrophoneStream(); Privileged.reconnectA2dp(it.bluetoothDevice.address) }
         micJob?.cancel()
         r.close()
         rec.value = RecState(saved = r.saveToMediaStore(ctx))

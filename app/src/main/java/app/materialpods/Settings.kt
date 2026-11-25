@@ -185,6 +185,31 @@ fun SettingsSection(d: AppleDevice, s: AppleState) {
         }
     }
 
+    Section("System integration") {
+        val st by Privileged.status.collectAsState()
+        val (text, action) = when (st) {
+            Privileged.Status.NOT_INSTALLED -> "Install Shizuku to show AirPods battery in Android's Bluetooth settings and connect audio directly — no root." to "Get Shizuku"
+            Privileged.Status.NOT_RUNNING -> "Shizuku is installed but not running. Start it in the Shizuku app (Wireless debugging)." to "Open Shizuku"
+            Privileged.Status.NO_PERMISSION -> "Allow MaterialPods to use Shizuku." to "Allow"
+            Privileged.Status.STARTING -> "Starting…" to null
+            Privileged.Status.READY -> "Active: battery shows in Bluetooth settings; Connect brings music and calls over." to null
+        }
+        ListItem(
+            headlineContent = { Text("Shizuku") },
+            supportingContent = { Text(text) },
+            trailingContent = action?.let { a -> {
+                FilledTonalButton(onClick = {
+                    when (st) {
+                        Privileged.Status.NOT_INSTALLED -> ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${Privileged.SHIZUKU}")))
+                        Privileged.Status.NOT_RUNNING -> ctx.packageManager.getLaunchIntentForPackage(Privileged.SHIZUKU)?.let(ctx::startActivity)
+                        else -> Privileged.requestPermission()
+                    }
+                }) { Text(a) }
+            } },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+        )
+    }
+
     Section("Controls") {
         Toggle(s, Id.VOLUME_SWIPE_MODE, "Swipe stem for volume")
         Toggle(s, Id.ONE_BUD_ANC_MODE, "Noise cancellation with one AirPod")
