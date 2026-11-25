@@ -52,7 +52,7 @@ The case only reports its battery while a bud is inside, so MaterialPods remembe
 When your AirPods show up nearby (lid opened, taken out) and the phone isn't connected, MaterialPods offers to connect. Pick the style in settings: a **card** that slides up, an **island** that springs open from the front camera like the pill widget — or off.
 
 <p align="center">
-  <img src="docs/popups.png" width="100%" alt="Card and island popups" />
+  <img src="docs/connect-popups.png" width="100%" alt="Card and island popups" />
 </p>
 
 ## Features
