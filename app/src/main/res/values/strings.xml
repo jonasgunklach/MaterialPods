@@ -1,0 +1,7 @@
+<resources>
+    <string name="widget_cookie">AirPods battery</string>
+    <string name="widget_gauges">Battery gauges</string>
+    <string name="widget_pill">AirPods pill</string>
+    <string name="widget_mode">Listening mode</string>
+    <string name="tile_mode">Listening mode</string>
+</resources>

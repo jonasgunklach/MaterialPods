@@ -166,6 +166,8 @@ class BLEManager(
     }
 
     fun stop() {
+        // MaterialPods: upstream never stopped the scan itself.
+        runCatching { bluetoothAdapter?.bluetoothLeScanner?.stopScan(scanCallback) }
         flushJob?.cancel()
         connectionTimeoutJob?.cancel()
         val bleScanner = bluetoothAdapter?.bluetoothLeScanner ?: return
